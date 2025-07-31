@@ -155,9 +155,9 @@ class Entry extends Model
     /**
      * Filter by collection
      */
-    public function scopeByCollection(Builder $query, int $collectionId): Builder
+    public function scopeByCollection(Builder $query, int|string $collectionId): Builder
     {
-        return $query->where('collection_id', $collectionId);
+        return $query->where('collection_id', (int) $collectionId);
     }
 
     /**
