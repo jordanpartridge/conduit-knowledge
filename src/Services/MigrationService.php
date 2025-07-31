@@ -24,14 +24,18 @@ class MigrationService
             'tags_migrated' => 0,
             'collections_created' => 0,
             'errors' => [],
+            'status' => 'success',
         ];
+
+        // Check if core tables exist before starting transaction
+        if (!$this->coreTablesExist()) {
+            $results['status'] = 'no_data';
+            $results['message'] = 'No legacy knowledge data found to migrate.';
+            return $results;
+        }
 
         try {
             DB::transaction(function () use (&$results) {
-                // Check if core tables exist
-                if (!$this->coreTablesExist()) {
-                    throw new \Exception('Core knowledge tables not found. Nothing to migrate.');
-                }
 
                 // Create default collection for migrated data
                 $defaultCollection = Collection::create([
@@ -142,6 +146,11 @@ class MigrationService
     public function backupCoreData(string $backupPath): bool
     {
         try {
+            // Check if tables exist first
+            if (!$this->coreTablesExist()) {
+                return false;
+            }
+
             $data = [
                 'backup_created_at' => now()->toISOString(),
                 'entries' => DB::table('knowledge_entries')->get()->toArray(),
@@ -185,6 +194,72 @@ class MigrationService
                 }
             });
         } catch (\Exception $e) {
+            $results['errors'][] = $e->getMessage();
+        }
+
+        return $results;
+    }
+
+    /**
+     * Import data from a backup file
+     */
+    public function importFromBackup(string $backupPath): array
+    {
+        $results = [
+            'entries_migrated' => 0,
+            'tags_migrated' => 0,
+            'collections_created' => 0,
+            'errors' => [],
+            'status' => 'success',
+        ];
+
+        if (!file_exists($backupPath)) {
+            $results['status'] = 'error';
+            $results['errors'][] = 'Backup file not found: ' . $backupPath;
+            return $results;
+        }
+
+        try {
+            $data = json_decode(file_get_contents($backupPath), true);
+            
+            if (!$data || !isset($data['entries'])) {
+                throw new \Exception('Invalid backup file format');
+            }
+
+            DB::transaction(function () use ($data, &$results) {
+                // Create default collection for imported data
+                $defaultCollection = Collection::create([
+                    'name' => 'Imported from Backup',
+                    'description' => 'Knowledge entries imported from backup file',
+                    'color' => '#64748B',
+                    'icon' => '📦',
+                ]);
+                $results['collections_created']++;
+
+                // Import entries
+                foreach ($data['entries'] as $entry) {
+                    try {
+                        $this->migrateEntry((object)$entry, $defaultCollection->id);
+                        $results['entries_migrated']++;
+                    } catch (\Exception $e) {
+                        $results['errors'][] = "Entry {$entry['id']}: " . $e->getMessage();
+                    }
+                }
+
+                // Import tag usage counts
+                if (isset($data['tags'])) {
+                    foreach ($data['tags'] as $tag) {
+                        $newTag = Tag::where('name', $tag['name'])->first();
+                        if ($newTag) {
+                            $newTag->update(['usage_count' => $tag['usage_count'] ?? 0]);
+                            $results['tags_migrated']++;
+                        }
+                    }
+                }
+            });
+
+        } catch (\Exception $e) {
+            $results['status'] = 'error';
             $results['errors'][] = $e->getMessage();
         }
 

@@ -9,6 +9,7 @@ use Jordanpartridge\ConduitKnowledge\Commands\AddCommand;
 use Jordanpartridge\ConduitKnowledge\Commands\SearchCommand;
 use Jordanpartridge\ConduitKnowledge\Commands\PublishCommand;
 use Jordanpartridge\ConduitKnowledge\Commands\MigrateCommand;
+use Jordanpartridge\ConduitKnowledge\Commands\ImportCommand;
 use Jordanpartridge\ConduitKnowledge\Services\KnowledgeService;
 use Jordanpartridge\ConduitKnowledge\Services\GitContextService;
 use Jordanpartridge\ConduitKnowledge\Services\SemanticSearchService;
@@ -35,6 +36,7 @@ class ServiceProvider extends BaseServiceProvider
                 SearchCommand::class,
                 PublishCommand::class,
                 MigrateCommand::class,
+                ImportCommand::class,
             ]);
         }
     }

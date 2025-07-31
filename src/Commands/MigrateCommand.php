@@ -50,6 +50,23 @@ class MigrateCommand extends Command
         $this->line('📊 Migrating data...');
         $results = $this->migration->migrateFromCore();
 
+        // Check if no data was found
+        if (isset($results['status']) && $results['status'] === 'no_data') {
+            $this->newLine();
+            $this->warn('⚠️  ' . $results['message']);
+            $this->newLine();
+            $this->info('💡 Possible reasons:');
+            $this->line('   • You\'re on a fresh Conduit installation');
+            $this->line('   • Knowledge data was already migrated');
+            $this->line('   • You updated to v2.13.0+ which removed the legacy tables');
+            $this->newLine();
+            $this->line('📝 If you have legacy data to migrate:');
+            $this->line('   1. Restore from a database backup that includes knowledge tables');
+            $this->line('   2. Run this migration command again');
+            $this->line('   3. Or import from a JSON backup if available');
+            return self::SUCCESS;
+        }
+
         // Display results
         $this->displayResults($results);
 
