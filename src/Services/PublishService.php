@@ -675,6 +675,264 @@ paths:
           description: Entry details
 YAML;
     }
+
+    /**
+     * Generate collections HTML pages
+     */
+    private function generateCollectionsHtml(string $output, $collections, string $theme): void
+    {
+        // Create collections directory
+        File::makeDirectory($output . '/collections', 0755, true, true);
+        
+        // Generate collections index
+        $collectionsHtml = $this->renderCollectionsIndexTemplate([
+            'collections' => $collections,
+            'theme' => $theme,
+        ]);
+        
+        File::put($output . '/collections/index.html', $collectionsHtml);
+        
+        // Generate individual collection pages
+        foreach ($collections as $collection) {
+            $collectionHtml = $this->renderCollectionTemplate([
+                'collection' => $collection,
+                'theme' => $theme,
+            ]);
+            
+            $filename = slug($collection->name) . '.html';
+            File::put($output . '/collections/' . $filename, $collectionHtml);
+        }
+    }
+
+    /**
+     * Generate tags HTML pages
+     */
+    private function generateTagsHtml(string $output, $tags, string $theme): void
+    {
+        // Create tags directory
+        File::makeDirectory($output . '/tags', 0755, true, true);
+        
+        // Generate tags index
+        $tagsHtml = $this->renderTagsIndexTemplate([
+            'tags' => $tags,
+            'theme' => $theme,
+        ]);
+        
+        File::put($output . '/tags/index.html', $tagsHtml);
+        
+        // Generate individual tag pages
+        foreach ($tags as $tag) {
+            $tagHtml = $this->renderTagTemplate([
+                'tag' => $tag,
+                'theme' => $theme,
+            ]);
+            
+            $filename = slug($tag->name) . '.html';
+            File::put($output . '/tags/' . $filename, $tagHtml);
+        }
+    }
+
+    /**
+     * Render collections index template
+     */
+    private function renderCollectionsIndexTemplate(array $data): string
+    {
+        $collections = $data['collections'];
+        $collectionsHtml = '';
+        
+        foreach ($collections as $collection) {
+            $entriesCount = $collection->entries()->count();
+            $collectionsHtml .= <<<HTML
+                <div class="collection-card">
+                    <h3><a href="/collections/{slug($collection->name)}.html">{$collection->icon} {e($collection->name)}</a></h3>
+                    <p>{e($collection->description)}</p>
+                    <div class="meta">{$entriesCount} entries</div>
+                </div>
+HTML;
+        }
+        
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collections - Knowledge Base</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="{$data['theme']}">
+    <header>
+        <nav>
+            <a href="/index.html">🏠 Home</a>
+            <a href="/search.html">🔍 Search</a>
+            <a href="/tags/index.html">🏷️ Tags</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1>📁 Collections</h1>
+        <div class="collections-grid">
+            {$collectionsHtml}
+        </div>
+    </main>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Render individual collection template
+     */
+    private function renderCollectionTemplate(array $data): string
+    {
+        $collection = $data['collection'];
+        $entriesHtml = '';
+        
+        foreach ($collection->entries as $entry) {
+            $tags = implode(', ', $entry->tag_names ?? []);
+            $entriesHtml .= <<<HTML
+                <div class="entry-card">
+                    <div class="content">
+                        <p>{e($entry->content)}</p>
+                    </div>
+                    <div class="meta">
+                        <div class="tags">🏷️ {$tags}</div>
+                        <div class="date">📅 {$entry->created_at->format('M j, Y')}</div>
+                    </div>
+                </div>
+HTML;
+        }
+        
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{e($collection->name)} - Collections</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="{$data['theme']}">
+    <header>
+        <nav>
+            <a href="/index.html">🏠 Home</a>
+            <a href="/collections/index.html">📁 Collections</a>
+            <a href="/search.html">🔍 Search</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1>{$collection->icon} {e($collection->name)}</h1>
+        <p>{e($collection->description)}</p>
+        
+        <div class="entries">
+            {$entriesHtml}
+        </div>
+    </main>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Render tags index template
+     */
+    private function renderTagsIndexTemplate(array $data): string
+    {
+        $tags = $data['tags'];
+        $tagsHtml = '';
+        
+        foreach ($tags as $tag) {
+            $tagsHtml .= <<<HTML
+                <div class="tag-card">
+                    <h3><a href="/tags/{slug($tag->name)}.html">🏷️ {e($tag->name)}</a></h3>
+                    <div class="meta">{$tag->usage_count} entries</div>
+                </div>
+HTML;
+        }
+        
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tags - Knowledge Base</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="{$data['theme']}">
+    <header>
+        <nav>
+            <a href="/index.html">🏠 Home</a>
+            <a href="/search.html">🔍 Search</a>
+            <a href="/collections/index.html">📁 Collections</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1>🏷️ Tags</h1>
+        <div class="tags-grid">
+            {$tagsHtml}
+        </div>
+    </main>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * Render individual tag template
+     */
+    private function renderTagTemplate(array $data): string
+    {
+        $tag = $data['tag'];
+        $entriesHtml = '';
+        
+        foreach ($tag->entries as $entry) {
+            $otherTags = implode(', ', array_filter($entry->tag_names ?? [], fn($t) => $t !== $tag->name));
+            $entriesHtml .= <<<HTML
+                <div class="entry-card">
+                    <div class="content">
+                        <p>{e($entry->content)}</p>
+                    </div>
+                    <div class="meta">
+                        <div class="tags">🏷️ {$otherTags}</div>
+                        <div class="date">📅 {$entry->created_at->format('M j, Y')}</div>
+                    </div>
+                </div>
+HTML;
+        }
+        
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag: {e($tag->name)} - Knowledge Base</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="{$data['theme']}">
+    <header>
+        <nav>
+            <a href="/index.html">🏠 Home</a>
+            <a href="/tags/index.html">🏷️ Tags</a>
+            <a href="/search.html">🔍 Search</a>
+        </nav>
+    </header>
+    
+    <main>
+        <h1>🏷️ {e($tag->name)}</h1>
+        <p>{$tag->usage_count} entries</p>
+        
+        <div class="entries">
+            {$entriesHtml}
+        </div>
+    </main>
+</body>
+</html>
+HTML;
+    }
 }
 
 function slug(string $text): string
