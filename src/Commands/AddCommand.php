@@ -6,9 +6,11 @@ namespace Jordanpartridge\ConduitKnowledge\Commands;
 
 use Illuminate\Console\Command;
 use Jordanpartridge\ConduitKnowledge\Services\KnowledgeService;
+use Jordanpartridge\ConduitKnowledge\Concerns\ChecksMigration;
 
 class AddCommand extends Command
 {
+    use ChecksMigration;
     protected $signature = 'knowledge:add 
                             {content : The knowledge content to add}
                             {--tags= : Comma-separated tags}
@@ -26,6 +28,8 @@ class AddCommand extends Command
 
     public function handle(): int
     {
+        $this->checkFirstRun();
+        
         $content = $this->argument('content');
         $tags = $this->option('tags') ? explode(',', $this->option('tags')) : [];
         

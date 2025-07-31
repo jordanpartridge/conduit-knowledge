@@ -6,9 +6,11 @@ namespace Jordanpartridge\ConduitKnowledge\Commands;
 
 use Illuminate\Console\Command;
 use Jordanpartridge\ConduitKnowledge\Services\KnowledgeService;
+use Jordanpartridge\ConduitKnowledge\Concerns\ChecksMigration;
 
 class SearchCommand extends Command
 {
+    use ChecksMigration;
     protected $signature = 'knowledge:search 
                             {query? : Search query}
                             {--tags= : Filter by tags}
@@ -28,6 +30,8 @@ class SearchCommand extends Command
 
     public function handle(): int
     {
+        $this->checkFirstRun();
+        
         $query = $this->argument('query') ?? '';
         
         $filters = array_filter([
