@@ -1,0 +1,25 @@
+{
+    "namespace": "knowledge",
+    "name": "Knowledge",
+    "description": "A Conduit component for knowledge functionality",
+    "version": "1.0.0",
+    "commands": [
+        "init",
+        "status",
+        "configure",
+        "list"
+    ],
+    "min_conduit_version": "2.0.0",
+    "dependencies": [],
+    "tags": [
+        "conduit",
+        "cli"
+    ],
+    "author": {
+        "name": "Jordan Partridge",
+        "email": "jordan@partridge.rocks"
+    },
+    "homepage": "https://github.com/jordanpartridge/conduit-knowledge",
+    "repository": "https://github.com/jordanpartridge/conduit-knowledge",
+    "license": "MIT"
+}
