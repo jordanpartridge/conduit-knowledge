@@ -350,7 +350,13 @@ HTML;
             <div class="meta">
                 <div class="tags">🏷️ {$tags}</div>
                 <div class="date">📅 {$entry->created_at->format('M j, Y')}</div>
-                {$entry->repo ? "<div class='repo'>📂 {$entry->repo}</div>" : ""}
+HTML;
+        
+        if ($entry->repo) {
+            $html .= "<div class='repo'>📂 {$entry->repo}</div>";
+        }
+        
+        $html .= <<<HTML
             </div>
         </article>
     </main>
