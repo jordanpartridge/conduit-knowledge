@@ -317,12 +317,16 @@ HTML;
 
     /**
      * Render entry template
+     *
+     * Fixes #14: Extract conditional repo div to variable before heredoc
+     * to avoid undefined variable error with broken heredoc concatenation.
      */
     private function renderEntryTemplate(array $data): string
     {
         $entry = $data['entry'];
         $tags = implode(', ', $entry->tag_names);
-        
+        $repoDiv = $entry->repo ? "<div class='repo'>📂 {$entry->repo}</div>" : '';
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="en">
@@ -340,23 +344,17 @@ HTML;
             <a href="/search.html">🔍 Search</a>
         </nav>
     </header>
-    
+
     <main>
         <article class="entry">
             <div class="content">
                 <p>{$entry->content}</p>
             </div>
-            
+
             <div class="meta">
                 <div class="tags">🏷️ {$tags}</div>
                 <div class="date">📅 {$entry->created_at->format('M j, Y')}</div>
-HTML;
-        
-        if ($entry->repo) {
-            $html .= "<div class='repo'>📂 {$entry->repo}</div>";
-        }
-        
-        $html .= <<<HTML
+                {$repoDiv}
             </div>
         </article>
     </main>
